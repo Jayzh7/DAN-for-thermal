@@ -2,13 +2,14 @@ from FaceAlignment import FaceAlignment
 import numpy as np
 import cv2
 import utils
+from matplotlib import pyplot as plt
 
 model = FaceAlignment(112, 112, 1, 1, True)
 model.loadNetwork("../data/DAN-Menpo-tracking.npz")
 
 cascade = cv2.CascadeClassifier("../data/haarcascade_frontalface_alt.xml")
 
-color_img = cv2.imread("../data/jk.jpg")
+color_img = cv2.imread("../data/jk.png")
 if len(color_img.shape) > 2:
     gray_img = np.mean(color_img, axis=2).astype(np.uint8)
 else:
@@ -41,6 +42,8 @@ for rect in rects:
     for i in range(landmarks.shape[0]):
         cv2.circle(color_img, (landmarks[i, 0], landmarks[i, 1]), 2, (0, 255, 0))
 
-cv2.imshow("image", color_img)
+plt.imshow(color_img, cmap='gray')
+plt.show()
+#cv2.imshow("image", color_img)
 
-key = cv2.waitKey(0)
+#key = cv2.waitKey(0)
