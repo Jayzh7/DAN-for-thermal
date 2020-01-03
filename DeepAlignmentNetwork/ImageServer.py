@@ -1,7 +1,7 @@
 from scipy import ndimage
 import numpy as np
 import utils
-import cPickle as pickle
+import pickle
 import glob
 from os import path
 
@@ -20,7 +20,7 @@ class ImageServer(object):
         self.imgSize = imgSize
         self.frameFraction = frameFraction
         self.initialization = initialization
-        self.color = color;
+        self.color = color
 
         self.boundingBoxes = []
 
@@ -143,7 +143,7 @@ class ImageServer(object):
         rotationStdDevRad = rotationStdDev * np.pi / 180         
         translationStdDevX = translationMultX * (scaledMeanShape[:, 0].max() - scaledMeanShape[:, 0].min())
         translationStdDevY = translationMultY * (scaledMeanShape[:, 1].max() - scaledMeanShape[:, 1].min())
-        print "Creating perturbations of " + str(self.gtLandmarks.shape[0]) + " shapes"
+        print("Creating perturbations of " + str(self.gtLandmarks.shape[0]) + " shapes")
 
         for i in range(self.initLandmarks.shape[0]):
             print(i)
@@ -195,7 +195,6 @@ class ImageServer(object):
             self.meanImg = imageServer.meanImg
 
         self.imgs = self.imgs - self.meanImg
-        
         if imageServer is None:
             self.stdDevImg = np.std(self.imgs, axis=0)
         else:
@@ -207,11 +206,14 @@ class ImageServer(object):
 
         meanImg = self.meanImg - self.meanImg.min()
         meanImg = 255 * meanImg / meanImg.max()  
-        meanImg = meanImg.astype(np.uint8)   
-        if self.color:
-            plt.imshow(np.transpose(meanImg, (1, 2, 0)))
-        else:
-            plt.imshow(meanImg[0], cmap=plt.cm.gray)
+        meanImg = meanImg.astype(np.uint8)
+        try:
+            if self.color:
+                plt.imshow(np.transpose(meanImg, (1, 2, 0)))
+            else:
+                plt.imshow(meanImg[0], cmap=plt.cm.gray)
+        except IndexError:
+            print("size of images cannot be 0")
         plt.savefig("../meanImg.jpg")
         plt.clf()
 

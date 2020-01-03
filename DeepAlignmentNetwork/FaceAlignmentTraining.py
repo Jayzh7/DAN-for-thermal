@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from tqdm import tqdm
 import os
 import time
 import datetime
@@ -299,7 +300,7 @@ class FaceAlignmentTraining(object):
         self.validateNetwork()        
         lowestError = np.min(self.errors)
 
-        for epoch in range(num_epochs):
+        for epoch in tqdm(range(num_epochs)):
             print("Starting epoch " + str(epoch))
 
             train_err = 0

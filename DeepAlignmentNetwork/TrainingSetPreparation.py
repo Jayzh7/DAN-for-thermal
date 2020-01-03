@@ -1,8 +1,10 @@
 from ImageServer import ImageServer
 import numpy as np
 
-imageDirs = ["../data/images/lfpw/trainset/", "../data/images/helen/trainset/", "../data/images/afw/"]
-boundingBoxFiles = ["../data/boxesLFPWTrain.pkl", "../data/boxesHelenTrain.pkl", "../data/boxesAFW.pkl"]
+# imageDirs = ["../data/images/lfpw/trainset/", "../data/images/helen/trainset/", "../data/images/afw/"]
+# boundingBoxFiles = ["../data/boxesLFPWTrain.pkl", "../data/boxesHelenTrain.pkl", "../data/boxesAFW.pkl"]
+imageDirs = ['../data/images/thermal_detected/']
+boundingBoxFiles = ["../data/boxesThermal.pkl"]
 
 datasetDir = "../data/"
 
