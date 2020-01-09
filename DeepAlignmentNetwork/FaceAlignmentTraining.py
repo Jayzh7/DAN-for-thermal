@@ -290,7 +290,7 @@ class FaceAlignmentTraining(object):
         params = []
         for stage in self.stagesToTrain:
             params += self.getParamsForStage(stage) 
-
+        print(params)
         updates = lasagne.updates.adam(self.loss, params, learning_rate=learning_rate)     
 
         self.train_fn = theano.function([self.data, self.targets], self.loss, updates=updates)  
