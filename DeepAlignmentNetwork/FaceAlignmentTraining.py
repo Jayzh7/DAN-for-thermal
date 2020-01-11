@@ -267,7 +267,12 @@ class FaceAlignmentTraining(object):
 
         nImages = len(idxs)
         nChunks = 1 + nImages / chunkSize
-
+        print("")
+        with open("point_errors.txt", "a+") as fp:
+            for i in range(nImages):
+                fp.write("{} ".format(loss(X[idxs[i]], y[idxs[i]])))
+                print()
+            fp.write("\n")
         idxs = np.array_split(idxs, nChunks)
         for i in range(len(idxs)):
             error += loss(X[idxs[i]], y[idxs[i]])

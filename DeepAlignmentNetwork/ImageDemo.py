@@ -7,15 +7,25 @@ from menpo import io as mio
 import menpodetect
 import pickle
 import dlib
-
+def scaled_detector(img, face_detector):
+    for scale in range(2,6):
+        new_img = cv2.resize(img, (scale*160, scale*120))
+        cv2.imwrite("temp.png", new_img)
+        img = mio.import_image('temp.png')
+        bb = face_detector(img)
+        if bb is not None:
+            return [bb, scale]
+    return [None, None]
 model = FaceAlignment(112, 112, 1, 2, False)
-model.loadNetwork("../networks/network_00021_2020-01-09-05-59.npz")
+model.loadNetwork("../network_00039_2020-01-10-09-17.npz")
+# model.loadNetwork("../data2/network_00042_2020-01-10-05-36.npz")
 # color_img = cv2.imread("../data/jk.png")
 face_detector = menpodetect.DlibDetector(dlib.simple_object_detector("../data/hog_detector.svm"))
 # color_img = cv2.imread("../data/images/thermal_detected/irface_sub001_seq02_frm00055.jpg_lfb.png")
 
 # print(gray_img.shape)
-img_file = "../data/images/thermal_detected/irface_sub001_seq02_frm00373.jpg_lfb.png"
+img_file = "../data/images/thermal_detected/irface_sub001_seq02_frm00055.jpg_lfb.png"
+
 # img_file = "../data/jk.png"
 img = mio.import_image(img_file) #"../data/images/thermal_detected/irface_sub001_seq02_frm00055.jpg_lfb.png")
 # reset = True
@@ -33,6 +43,10 @@ else:
 # gray_img = gray_img.astype(np.uint8)
 print(gray_img.shape)
 # for rect in rects:
+scale = 1
+if face_bb is None:
+    [face_bb, scale] = scaled_detector(gray_img, face_detector)
+
 for bb in face_bb:
 
     # tl_x = rect[0]
@@ -41,9 +55,9 @@ for bb in face_bb:
     # br_y = tl_y + rect[3]
     box = bb.as_vector()
     tl_x = int(box[1])
-    tl_y = int(box[0])
+    tl_y = int(box[0])-20
     br_x = int(box[5])
-    br_y = int(box[4])
+    br_y = int(box[4])-20
     print("tl_x:{} tl_y:{} br_x:{} br_y:{}".format(tl_x, tl_y, br_x, br_y))
     cv2.rectangle(gray_img, (tl_x, tl_y), (br_x, br_y), (255, 0, 0))
 

@@ -1,14 +1,17 @@
 # generate bounding boxes for all thermal images
 # a cascade model is used for this.
+import sys
+sys.path.append("../DeepAlignmentNetwork")
 import os
 import dlib
 import numpy as np
 from menpo import io as mio
 import menpodetect
 import pickle
+import utils
 import shutil
 
-img_dir = "../data/images/thermal_detected"
+img_dir = "../data/images/thermal_downscaled/"
 # old_img_dir = "../data/images/thermal_all"
 saved_model = "../data/hog_detector.svm"
 
@@ -34,8 +37,10 @@ for file in os.listdir(img_dir):
             # if success == 100:
             #     break
         except IndexError:
-            print("No face detected!")
+            print("No face detected for image {}, using landmarks for bounding box".format(file))
+            landmarks = utils.loadFromPts(os.path.join(img_dir, file[:-3]+"pts"))
+            dict[file] = np.array([np.min(landmarks[:,0]), np.min(landmarks[:,1]), np.max(landmarks[:,0]), np.max(landmarks[:,1])])
             fail += 1
-with open("boxesThermal.pkl", "wb") as fp:
+with open("boxesThermalDownscaledAll.pkl", "wb") as fp:
     pickle.dump(dict, fp)
 print("Detection rate: {}".format(success/(success+fail)))

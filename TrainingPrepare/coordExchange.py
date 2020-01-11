@@ -1,3 +1,5 @@
+# exchange X, Y coordinates
+
 import os
 import sys
 sys.path.append("../DeepAlignmentNetwork")

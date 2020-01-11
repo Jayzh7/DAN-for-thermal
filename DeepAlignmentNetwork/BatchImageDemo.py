@@ -8,9 +8,20 @@ import numpy as np
 import pickle
 import dlib
 import os
+def scaled_detector(img, face_detector):
+    for scale in range(2,6):
+        new_img = cv2.resize(img, (scale*160, scale*120))
+        cv2.imwrite("temp.png", new_img)
+        img = mio.import_image('temp.png')
+        bb = face_detector(img)
+        if len(bb) != 0:
+            return [bb, scale]
+        else:
+            print("No face detected at scale: {}".format(scale))
+    return [None, None]
 
 model = FaceAlignment(112, 112, 1, 2, False)
-model.loadNetwork("../networks/network_00021_2020-01-09-05-59.npz")
+model.loadNetwork("../data2/network_00055_2020-01-10-11-26.npz")
 # color_img = cv2.imread("../data/jk.png")
 face_detector = menpodetect.DlibDetector(dlib.simple_object_detector("../data/hog_detector.svm"))
 # color_img = cv2.imread("../data/images/thermal_detected/irface_sub001_seq02_frm00055.jpg_lfb.png")
@@ -40,6 +51,9 @@ for img_file in os.listdir(img_dir):
     # gray_img = gray_img.astype(np.uint8)
     print(gray_img.shape)
     # for rect in rects:
+    if len(face_bb) == 0:
+        [face_bb, scale] = scaled_detector(gray_img, face_detector)
+    print(len(face_bb))
     for bb in face_bb:
 
         # tl_x = rect[0]
@@ -47,10 +61,11 @@ for img_file in os.listdir(img_dir):
         # br_x = tl_x + rect[2]
         # br_y = tl_y + rect[3]
         box = bb.as_vector()
-        tl_x = int(box[1])
-        tl_y = int(box[0])
-        br_x = int(box[5])
-        br_y = int(box[4])
+        extend = -10
+        tl_x = int(box[1]/scale) - extend
+        tl_y = int(box[0]/scale) - extend
+        br_x = int(box[5]/scale) + extend
+        br_y = int(box[4]/scale) + extend
         print("tl_x:{} tl_y:{} br_x:{} br_y:{}".format(tl_x, tl_y, br_x, br_y))
         cv2.rectangle(gray_img, (tl_x, tl_y), (br_x, br_y), (255, 0, 0))
 
