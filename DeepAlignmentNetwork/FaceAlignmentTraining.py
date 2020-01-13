@@ -28,6 +28,8 @@ class FaceAlignmentTraining(object):
         self.targets = theano.tensor.tensor4('targets')
 
         self.errors = []
+        self.pointErrors = [[] for _ in range(68)] # 68 empty lists
+        self.pointErrors2 = [[] for _ in range(68)]
         self.errorsTrain = []
 
         self.nStages = nStages
@@ -46,25 +48,41 @@ class FaceAlignmentTraining(object):
         
         self.loss = self.landmarkErrorNorm(self.prediction, self.targets)
         self.test_loss = self.landmarkErrorNorm(self.prediction_test, self.targets)
+        self.point_loss = self.landmarkPointError(self.prediction_test, self.targets)
 
-        self.test_fn = theano.function([self.data, self.targets], self.test_loss)  
+        self.test_fn = theano.function([self.data, self.targets], self.test_loss)
+        self.point_fn = theano.function([self.data, self.targets], self.point_loss)
 
     def landmarkPairErrorNorm(self, output, landmarks):
         gtLandmarks = landmarks[1]
         initLandmarks = landmarks[0]
 
         transformedLandmarks = T.reshape(output[:136], (68, 2))
-      
+
         meanError = T.mean(T.sqrt(T.sum((transformedLandmarks - gtLandmarks)**2, axis=1)))
         eyeDist = (T.mean(gtLandmarks[36:42], axis=0) - T.mean(gtLandmarks[42:48], axis=0)).norm(2)
         res = meanError / eyeDist
 
         return res
 
+    def landmarkPointErrorNorm(self, output, landmarks):
+        gtLandmarks = landmarks[1]
+        transformed = T.reshape(output[:136], (68, 2))
+
+        meanError=[]
+
+        for i in range(68):
+            meanError.append(T.mean(T.sqrt(T.sum((transformed[i]-gtLandmarks[i])**2))))
+
+        return meanError
+
     def landmarkErrorNorm(self, transforms, landmarks):
         errors, updates = theano.scan(self.landmarkPairErrorNorm, [transforms, landmarks])
             
         return T.mean(errors)
+    def landmarkPointError(self, transforms, landmarks):
+        errors, updates = theano.scan(self.landmarkPointErrorNorm, [transforms, landmarks])
+        return errors
 
     def addDANStage(self, stageIdx, net):
         prevStage = 's' + str(stageIdx - 1)
@@ -242,17 +260,31 @@ class FaceAlignmentTraining(object):
 
         return output
 
+    def savePointError(self, errors, filename):
+        with open(filename, "w") as fp:
+            for i in range(len(errors)):
+                for j in range(len(errors[i])):
+                    fp.write(str(errors[i][j]) + " ")
+                fp.write("\n")
+
     def validateNetwork(self):        
-        error = self.getErrors(self.Xvalid, self.Yvalid, self.test_fn, self.testIdxsValidSet)
-        errorTrain = self.getErrors(self.Xtrain, self.Ytrain, self.test_fn, self.testIdxsTrainSet)
+        [error, errorsVal] = self.getErrors(self.Xvalid, self.Yvalid, self.test_fn, self.point_fn, self.testIdxsValidSet)
+        [errorTrain, errorsTrain] = self.getErrors(self.Xtrain, self.Ytrain, self.test_fn, self.point_fn, self.testIdxsTrainSet)
+        # pointError = self.
         print("Validation error: " + str(error))
         print("Train error: " + str(errorTrain))
         self.errors.append(error)
         self.errorsTrain.append(errorTrain)
-        self.drawErrors()
+        for i in range(68):
+            self.pointErrors[i].append(errorsTrain[i])
+            self.pointErrors2[i].append(errorsVal[i])
 
+        self.drawErrors()
         textRepresentation = np.column_stack((range(len(self.errors)), self.errors, self.errorsTrain))
-        
+
+
+        self.savePointError(self.pointErrors, "../point_errors_train.txt")
+        self.savePointError(self.pointErrors2, "../point_errors_val.txt")
         np.savetxt("../errors.txt", textRepresentation)          
 
     def drawErrors(self):
@@ -262,23 +294,22 @@ class FaceAlignmentTraining(object):
         plt.savefig("../errors.jpg")
         plt.clf()
 
-    def getErrors(self, X, y, loss, idxs, chunkSize=50):
+    def getErrors(self, X, y, loss, point_fn, idxs, chunkSize=50):
         error = 0
-
+        errors = [0 for _ in range(68)]
         nImages = len(idxs)
         nChunks = 1 + nImages / chunkSize
-        print("")
-        with open("point_errors.txt", "a+") as fp:
-            for i in range(nImages):
-                fp.write("{} ".format(loss(X[idxs[i]], y[idxs[i]])))
-                print()
-            fp.write("\n")
         idxs = np.array_split(idxs, nChunks)
         for i in range(len(idxs)):
+            p_errors = point_fn(X[idxs[i]], y[idxs[i]])
+            pp_errors = []
+            for j in range(len(p_errors)):
+                # print("p_error len: {}".format(len(p_errors[j])))
+                pp_errors.append(sum(p_errors[j])/len(p_errors[j]))
             error += loss(X[idxs[i]], y[idxs[i]])
-
+            errors = [a+b for a,b in zip(errors, pp_errors)]
         error = error / len(idxs)
-        return error
+        return [error, errors]
 
     def getParamsForStage(self, stageIdx):        
         if stageIdx == 0:
@@ -295,8 +326,7 @@ class FaceAlignmentTraining(object):
         params = []
         for stage in self.stagesToTrain:
             params += self.getParamsForStage(stage) 
-        print(params)
-        updates = lasagne.updates.adam(self.loss, params, learning_rate=learning_rate)     
+        updates = lasagne.updates.adam(self.loss, params, learning_rate=learning_rate)
 
         self.train_fn = theano.function([self.data, self.targets], self.loss, updates=updates)  
        
