@@ -20,7 +20,7 @@ img = cv2.imread(os.path.join(img_dir, img_file))
 landmarks = utils.loadFromPts(os.path.join(img_dir, pts_file))
 
 for landmark in landmarks:
-    cv2.circle(img, (int(landmark[0]), int(landmark[1])), 2, (255, 0,  0))
+    cv2.circle(img, (int(landmark[0]), int(landmark[1])), 1, (255, 0,  0), -1)
 
 plt.imshow(img)
 plt.show()
