@@ -12,7 +12,8 @@ img_dir = "../data/images/thermal_downscaled/"
 # img_file= "irface_sub002_seq02_frm00344.jpg_lfb.png"
 # img_file = "irface_sub017_seq03_frm00662.jpg_lfb.png"
 # img_file = "indoor_001.png"
-img_file = "irface_sub055_seq07_frm00992.jpg_lfb.png"
+# img_file = "irface_sub010_seq03_frm01139.jpg_lfb.png"
+img_file = "irface_sub002_seq02_frm00170.jpg_lfb.png"
 pts_file = img_file[:-3]+'pts'
 
 img = cv2.imread(os.path.join(img_dir, img_file))
