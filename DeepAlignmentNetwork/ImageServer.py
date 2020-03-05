@@ -80,7 +80,6 @@ class ImageServer(object):
 
             landmarks = np.vstack((landmarks, landmarks))
             boundingBoxes = np.vstack((boundingBoxes, boundingBoxes))       
-
         self.origLandmarks = landmarks
         self.filenames = filenames
         self.mirrors = mirrorList
@@ -126,6 +125,7 @@ class ImageServer(object):
             self.gtLandmarks.append(groundTruth)
 
         self.initLandmarks = np.array(self.initLandmarks)
+        print(self.initLandmarks.shape)
         self.gtLandmarks = np.array(self.gtLandmarks)    
 
     def GeneratePerturbations(self, nPerturbations, perturbations):
@@ -168,6 +168,7 @@ class ImageServer(object):
 
         self.imgs = np.array(newImgs)
         self.initLandmarks = np.array(newInitLandmarks)
+        print(self.initLandmarks.shape)
         self.gtLandmarks = np.array(newGtLandmarks)
 
     def CropResizeRotateAll(self):

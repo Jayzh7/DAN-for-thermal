@@ -8,9 +8,11 @@ import numpy as np
 import pickle
 import dlib
 import os
+# from HeuristicFaceDetection import detect_face
+
 def scaled_detector(img, face_detector):
     for scale in range(2,6):
-        new_img = cv2.resize(img, (scale*160, scale*120))
+        new_img = cv2.resize(img, ((int)(scale*240), (int)(scale*320)))
         #                                160        120
         cv2.imwrite("temp.png", new_img)
         mio_img = mio.import_image('temp.png')
@@ -19,25 +21,31 @@ def scaled_detector(img, face_detector):
             return [bb, scale]
         else:
             print("No face detected at scale: {}".format(scale))
+    for scale in [0.8, 0.6, 0.5, 0.4, 0.3]:
+        new_img = cv2.resize(img, ((int)(scale*240), (int)(scale*320)))
+        #                                160        120
+        cv2.imwrite("temp.png", new_img)
+        mio_img = mio.import_image('temp.png')
+        bb = face_detector(mio_img)
+        if len(bb) != 0:
+            return [bb, scale]
+        else:
+            print("No face detected at scale: {}".format(scale))
+
+
     return [None, None]
 
-model = FaceAlignment(112, 112, 1, 2, False)
-# model.loadNetwork("../data2/network_00055_2020-01-10-11-26.npz")
-model.loadNetwork("../network_00044_2020-01-10-12-11.npz")
-# color_img = cv2.imread("../data/jk.png")
 face_detector = menpodetect.DlibDetector(dlib.simple_object_detector("../data/hog_detector.svm"))
-# color_img = cv2.imread("../data/images/thermal_detected/irface_sub001_seq02_frm00055.jpg_lfb.png")
-
-# print(gray_img.shape)
-# img_file = "../data/images/thermal_detected/irface_sub001_seq02_frm00373.jpg_lfb.png"
+model = None
 img_dir = "../testImages"
 out_dir = "../testResults"
 
 for img_file in os.listdir(img_dir):
+    print(img_file)
+    if img_file.endswith(".db"):
+        continue
 
-# if img_file.endswith(".p")
-# img_file = "../data/jk.png"
-    for extend in [-5, -10, -15]: #range( 50):
+    for extend in [0]: #range( 50):
         img = mio.import_image(os.path.join(img_dir, img_file)) #"../data/images/thermal_detected/irface_sub001_seq02_frm00055.jpg_lfb.png")
         # reset = True
         landmarks = None
@@ -57,12 +65,15 @@ for img_file in os.listdir(img_dir):
         if len(face_bb) == 0:
             [face_bb, scale] = scaled_detector(gray_img, face_detector)
             if face_bb is None:
-                continue
+                face_bb =  HeuristicFaceDetection(gray_img)
         else:
             scale = 1
-        # print(len(face_bb))
-        # for bb in face_bb:
-        for _ in range(1):
+        if model is None:
+            model = FaceAlignment(112, 112, 1, 2, False)
+            model.loadNetwork("../data2/network_00055_2020-01-10-11-26.npz")
+        for _ in range(len(face_bb)):
+            lm_file = img_file.split('.')[0] + ".txt"
+            lm_fp = open(os.path.join(out_dir,lm_file), "w")
             bb = face_bb[0]
             # tl_x = rect[0]
             # tl_y = rect[1]
@@ -88,15 +99,14 @@ for img_file in os.listdir(img_dir):
 
             landmarks = landmarks.astype(np.int32)
             for i in range(landmarks.shape[0]):
-                # if i >= 27 and i <= 35:
-                #     cv2.circle(gray_img, (landmarks[i, 0], landmarks[i, 1]), 3, (255, 255, 0), -1)
-                # else:
-                print("{} {}".format(landmarks[i,0], landmarks[i, 1]))
+                print("{}\t{}".format(landmarks[i,0], landmarks[i, 1]))
+                lm_fp.write("{}\t{}\n".format(landmarks[i,0], landmarks[i, 1]))
                 cv2.circle(gray_img, (landmarks[i, 0], landmarks[i, 1]), 1, (0, 255, 0), -1)
+            lm_fp.close()
         plt.imshow(gray_img, cmap='gray')
         plt.savefig(os.path.join(out_dir, str(extend) + "_" + img_file), dpi='figure', bbox_inches='tight')
         plt.clf()
         plt.close()
-    #cv2.imshow("image", color_img)
+    # cv2.imshow("image", color_img)
 
 #key = cv2.waitKey(0)

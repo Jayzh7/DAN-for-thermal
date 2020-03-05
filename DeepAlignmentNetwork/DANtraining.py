@@ -19,4 +19,4 @@ training.initializeNetwork()
 #load previously saved moved
 #training.loadNetwork("../DAN-Menpo.npz")
 
-training.train(0.001, num_epochs=10)
+training.train(0.0001, num_epochs=10)

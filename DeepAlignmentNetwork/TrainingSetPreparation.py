@@ -3,15 +3,14 @@ import numpy as np
 
 # imageDirs = ["../data/images/lfpw/trainset/", "../data/images/helen/trainset/", "../data/images/afw/"]
 # boundingBoxFiles = ["../data/boxesLFPWTrain.pkl", "../data/boxesHelenTrain.pkl", "../data/boxesAFW.pkl"]
-imageDirs = ['../data/images/thermal_downscaled/']
+imageDirs = ['/home/320077119/Desktop/DeepAlignmentNetwork/data/images/thermal_downscaled/']
 boundingBoxFiles = ["../TrainingPrepare/boxesThermalDownscaledAll.pkl"]
 
-datasetDir = "../data/"
+datasetDir = "../data2/"
 
-meanShape = np.load("../data/meanFaceShape.npz")["meanShape"]
-
+meanShape = np.load("../data/reducedMeanShape.npz")["meanShape"]
 trainSet = ImageServer(initialization='rect')
-trainSet.PrepareData(imageDirs, boundingBoxFiles, meanShape, 200, 100000, False)
+trainSet.PrepareData(imageDirs, None, meanShape, 200, 300000, False)
 trainSet.LoadImages()
 trainSet.GeneratePerturbations(10, [0.2, 0.2, 20, 0.25])
 trainSet.NormalizeImages()

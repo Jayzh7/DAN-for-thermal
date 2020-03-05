@@ -23,13 +23,13 @@ class FaceAlignmentTraining(object):
     def __init__(self, nStages, stagesToTrain):
         self.batchsize = 64
         self.landmarkPatchSize = 16
-
+        self.landmarkNumber = 13
         self.data = theano.tensor.tensor4('inputs', dtype=theano.config.floatX)
         self.targets = theano.tensor.tensor4('targets')
 
         self.errors = []
-        self.pointErrors = [[] for _ in range(68)] # 68 empty lists
-        self.pointErrors2 = [[] for _ in range(68)]
+        self.pointErrors = [[] for _ in range(self.landmarkNumber)] # self.landmarkNumber empty lists
+        self.pointErrors2 = [[] for _ in range(self.landmarkNumber)]
         self.errorsTrain = []
 
         self.nStages = nStages
@@ -57,21 +57,21 @@ class FaceAlignmentTraining(object):
         gtLandmarks = landmarks[1]
         initLandmarks = landmarks[0]
 
-        transformedLandmarks = T.reshape(output[:136], (68, 2))
+        transformedLandmarks = T.reshape(output[:self.landmarkNumber*2], (self.landmarkNumber, 2))
 
         meanError = T.mean(T.sqrt(T.sum((transformedLandmarks - gtLandmarks)**2, axis=1)))
-        eyeDist = (T.mean(gtLandmarks[36:42], axis=0) - T.mean(gtLandmarks[42:48], axis=0)).norm(2)
+        eyeDist = (T.mean(gtLandmarks[9], axis=0) - T.mean(gtLandmarks[10], axis=0)).norm(2)
         res = meanError / eyeDist
 
         return res
 
     def landmarkPointErrorNorm(self, output, landmarks):
         gtLandmarks = landmarks[1]
-        transformed = T.reshape(output[:136], (68, 2))
+        transformed = T.reshape(output[:self.landmarkNumber*2], (self.landmarkNumber, 2))
 
         meanError=[]
 
-        for i in range(68):
+        for i in range(self.landmarkNumber):
             meanError.append(T.mean(T.sqrt(T.sum((transformed[i]-gtLandmarks[i])**2))))
 
         return meanError
@@ -123,7 +123,7 @@ class FaceAlignmentTraining(object):
        
         net[curStage + '_fc1'] = batch_norm(lasagne.layers.DenseLayer(net[curStage + '_fc1_dropout'], num_units=256, W=GlorotUniform('relu')))
 
-        net[curStage + '_output'] = lasagne.layers.DenseLayer(net[curStage + '_fc1'], num_units=136, nonlinearity=None)
+        net[curStage + '_output'] = lasagne.layers.DenseLayer(net[curStage + '_fc1'], num_units=self.landmarkNumber*2, nonlinearity=None)
         net[curStage + '_landmarks'] = lasagne.layers.ElemwiseSumLayer([net[prevStage + '_landmarks_affine'], net[curStage + '_output']])
 
         net[curStage + '_landmarks'] = LandmarkTransformLayer(net[curStage + '_landmarks'], net[prevStage + '_transform_params'], True)
@@ -153,7 +153,7 @@ class FaceAlignmentTraining(object):
         net['s1_fc1_dropout'] = lasagne.layers.DropoutLayer(net['s1_pool4'], p=0.5)
         net['s1_fc1'] = batch_norm(lasagne.layers.DenseLayer(net['s1_fc1_dropout'], num_units=256, W=GlorotUniform('relu')))
 
-        net['s1_output'] = lasagne.layers.DenseLayer(net['s1_fc1'], num_units=136, nonlinearity=None)
+        net['s1_output'] = lasagne.layers.DenseLayer(net['s1_fc1'], num_units=self.landmarkNumber*2, nonlinearity=None)
         net['s1_landmarks'] = LandmarkInitLayer(net['s1_output'], self.initLandmarks)
 
         for i in range(1, self.nStages):
@@ -168,6 +168,8 @@ class FaceAlignmentTraining(object):
         nLandmarks = imageServer.gtLandmarks.shape[1]
 
         y = np.zeros((nSamples, 2, nLandmarks, 2), dtype=np.float32)
+        print(imageServer.initLandmarks.shape)
+        print(y[:,0].shape)
         y[:, 0] = imageServer.initLandmarks
         y[:, 1] = imageServer.gtLandmarks
 
@@ -275,7 +277,7 @@ class FaceAlignmentTraining(object):
         print("Train error: " + str(errorTrain))
         self.errors.append(error)
         self.errorsTrain.append(errorTrain)
-        for i in range(68):
+        for i in range(self.landmarkNumber):
             self.pointErrors[i].append(errorsTrain[i])
             self.pointErrors2[i].append(errorsVal[i])
 
@@ -296,7 +298,7 @@ class FaceAlignmentTraining(object):
 
     def getErrors(self, X, y, loss, point_fn, idxs, chunkSize=50):
         error = 0
-        errors = [0 for _ in range(68)]
+        errors = [0 for _ in range(self.landmarkNumber)]
         nImages = len(idxs)
         nChunks = 1 + nImages / chunkSize
         idxs = np.array_split(idxs, nChunks)
