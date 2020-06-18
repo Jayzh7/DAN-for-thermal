@@ -5,6 +5,6 @@ Our paper was accepted by CVPM workshop.
 
 
 ## demo
-An example of the application of this model is as follow. No quantitative result is given as that is not our main concern. But our experience shows that it does not work well for side view faces and we are exploring solutions.
+An example of the application of this model is as follow. Quantitative analysis is to follow. But our experience shows that it does not work well for side view faces and we are exploring solutions.
 
 ![alt text](https://github.com/Jayzh7/DAN-for-thermal/blob/master/demo.jpg "demo image")
